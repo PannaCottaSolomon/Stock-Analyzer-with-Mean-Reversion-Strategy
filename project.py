@@ -1,18 +1,18 @@
 import requests
 import pandas as pd
 import backtesting_simulator
+import json
+import matplotlib.pyplot as plt
 
-APIKEY = "8RUS0YURXTPQQYEM" # Alpha Vantage API Key (Solomon)
-K = 2                       # K: number of standard deviations away from MA
-
-
+APIKEY = "8RUS0YURXTPQQYEM"     # Alpha Vantage API Key (Solomon)
+K = 2                           # K: number of standard deviations away from MA
 
 def main():
     # Get Ticker, Initial Capital & Time
     ticker = input("Ticker: ")
     time_length = int(input("Length of time (days): "))
     amount = int(input("Initial Amount: "))
-    risk_free_rate = int(input("Risk-Free Rate (Annual):"))
+    risk_free_rate = int(input("Risk-Free Rate (Annual): "))
 
     # Get closing price
     stock_info = api_call_stock(ticker)
@@ -24,11 +24,11 @@ def main():
     moving_avg_200 = api_call_technical("EMA", ticker, "200")
     moving_avg_50 = api_call_technical("EMA", ticker, "50")
     
-    # print(json.dumps(stock_info, indent=2))
-    # print(json.dumps(rsi, indent=2))
-    # print(json.dumps(moving_avg_20, indent=2))
-    # print(json.dumps(moving_avg_200, indent=2))
-    # print(json.dumps(moving_avg_50, indent=2))
+    print(json.dumps(stock_info, indent=2))
+    print(json.dumps(rsi, indent=2))
+    print(json.dumps(moving_avg_20, indent=2))
+    print(json.dumps(moving_avg_200, indent=2))
+    print(json.dumps(moving_avg_50, indent=2))
 
     # Financial data cleaning & preprocessing
     df_stock_current = get_stock_past_n_days(stock_info, time_length)
@@ -56,6 +56,32 @@ def main():
 
     # Simulate trades using backtester
     simulation = backtesting_simulator.simulate(df_stock_current, trade_signals, amount, risk_free_rate)
+    
+    # Display simulation metrics & data
+    sim_metrics = simulation[0]
+    sim_data = simulation[1]
+    dates = [row["Date"] for row in sim_data]
+    ending_bal = [row["Ending Balance"] for row in sim_data]
+    price = [row["Price (Close)"] for row in sim_data]
+    
+    print(sim_metrics)
+    fig, graph1 = plt.subplots()
+
+    graph1.plot(dates, ending_bal, "b-o", label="Balance")
+    graph1.set_xlabel("Date")
+    graph1.set_ylabel("Balance", color="b")
+    graph1.tick_params(axis="y", labelcolor="b")
+    graph2 = graph1.twinx()
+    graph2.plot(dates, price, "r-s", label="Price (Close)")
+    graph2.set_ylabel("Price (Close)", color="r")
+    graph2.tick_params(axis="y", labelcolor="r")
+
+    plt.xticks(rotation=45)
+    plt.title("Balance & Price over Time")
+    plt.grid(True)
+    fig.tight_layout()
+    plt.show() 
+
 
 def trade_engine(stock_close, ema_20, bollinger_bands, rsi, ema_200, ema_50):
     signal = []
