@@ -1,51 +1,125 @@
 import requests
-import json
 import pandas as pd
+import json
 
-APIKEY = "8RUS0YURXTPQQYEM"
+APIKEY = "8RUS0YURXTPQQYEM" # Alpha Vantage API Key (Solomon)
+K = 2                       # K: number of standard deviations away from MA
+
 
 
 def main():
-    # Alpha Vantage API Key (Solomon)
-
     # Get Ticker, Initial Capital & Time
     ticker = input("Ticker: ")
-    amount = int(input("Initial Amount: "))
     time_length = int(input("Length of time (days): "))
+    # amount = int(input("Initial Amount: "))
 
-    # API call to retrieve stock data
-    stock_info = api_call(ticker)
+    # Get closing price
+    stock_info = api_call_stock(ticker)
+    # Get 20-day moving average (MA) for Bollinger Band calculation
+    moving_avg_20 = api_call_technical("EMA", ticker, "20")
+    # Get RSI (Relative Strength Indicator) for momentum (overselling/overbuying)
+    rsi = api_call_technical("RSI", ticker, "14")
+    # Get 200-day & 50-day moving average (MA) for long term trend calculation (golden/death cross)
+    moving_avg_200 = api_call_technical("EMA", ticker, "200")
+    moving_avg_50 = api_call_technical("EMA", ticker, "50")
+    
+    # print(json.dumps(stock_info, indent=2))
+    # print(json.dumps(rsi, indent=2))
+    # print(json.dumps(moving_avg_20, indent=2))
+    # print(json.dumps(moving_avg_200, indent=2))
+    # print(json.dumps(moving_avg_50, indent=2))
 
-    # Convert json of data to a pandas dataframe
-    df = convert_json_to_dataframe(stock_info, time_length)
-    print(df)
+    # Financial data cleaning & preprocessing
+    df_stock_current = get_stock_past_n_days(stock_info, time_length)
+    list_stock_std_dev = calc_std_dev(stock_info, 20) # std dev shld be same time period as MA
+    df_ema_20 = convert_technical_json_to_dataframe("EMA", moving_avg_20, time_length)
+    
+    df_rsi_14 = convert_technical_json_to_dataframe("RSI", rsi, time_length)
+    df_ema_200 = convert_technical_json_to_dataframe("EMA", moving_avg_200, time_length)
+    df_ema_50 = convert_technical_json_to_dataframe("EMA", moving_avg_50, time_length)
+    
+    # print(list_stock_std_dev)
+    # print(df_stock_current)
+    # print(df_ema_20)
+    # print(df_rsi_14)
+    # print(df_ema_200)
+    # print(df_ema_50)
+    
+    # Calculate Bollinger Bands
+    list_bollinger_bands = calc_bollinger_bands(list_stock_std_dev, df_ema_20)
+    # Calculate RSI
+    list_rsi = calc_rsi(df_rsi_14)
+        
+    # Generate buy/sell signal
+    trade_signals = trade_engine(df_stock_current, list_bollinger_bands, list_rsi, df_ema_200, df_ema_50)
 
-def api_call(ticker):
+
+
+def trade_engine(stock_close, bollinger_bands, rsi, ema_200, ema_50):
+    signal = []
+    return signal
+
+
+def api_call_stock(ticker):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&outputsize=full&apikey={APIKEY}"
     r = requests.get(url)
+    if r.status_code != 200:
+        print("API call failed with status code:", r.status_code)
     return r.json()
 
+def api_call_technical(indicator, ticker, period):
+    url = f"https://www.alphavantage.co/query?function={indicator}&symbol={ticker}&interval=daily&time_period={period}&series_type=close&apikey={APIKEY}"
+    r = requests.get(url)
+    if r.status_code != 200:
+        print("API call failed with status code:", r.status_code)
+    return r.json()
 
-def convert_json_to_dataframe(json, days):
+def convert_technical_json_to_dataframe(indicator, json, days):
+    df = pd.DataFrame.from_dict(json[f"Technical Analysis: {indicator}"], orient="index")
+    df = df.sort_index() # sorted in ascending (oldest date first)
+    df = df.tail(days) # 252 is 1 trading year
+    return df
+
+def get_stock_past_n_days(json, days):
     df = pd.DataFrame.from_dict(json["Time Series (Daily)"], orient="index")
     df = df.sort_index() # sorted in ascending (oldest date first)
     df = df[["4. close"]].astype(float).rename(columns={"4. close" : "Close"})
     df = df.tail(days) # 252 is 1 trading year
     return df
 
+def calc_std_dev(json, days):
+    std_dev = []
 
-def function_n():
-    ...
+    df = pd.DataFrame.from_dict(json["Time Series (Daily)"], orient="index")
+    df = df.sort_index() # sorted in ascending (oldest date first)
+    df = df[["4. close"]].astype(float).rename(columns={"4. close" : "Close"})
 
+    base_df = df.copy()
 
+    for day in range(days):
+        temp_df = base_df.tail(days + 20 - day)
+        df_oldest_n_days = temp_df.tail(-1 * days)
+        std_dev_curr = df_oldest_n_days.std()
+        std_dev.append(std_dev_curr)
+    
+    return std_dev
 
-def function_n():
-    ...
+def calc_bollinger_bands(std_dev_list, ema_20_df):
+    bollinger_bands = []
+    for i, ema_curr in enumerate(ema_20_df):
+        std_dev_curr = std_dev_list[i]
+        upper_limit = ema_curr + std_dev_curr
+        lower_limit = ema_curr - std_dev_curr
+        bollinger_bands.append({"upper": upper_limit, "lower": lower_limit})
 
+    return bollinger_bands
 
+def calc_rsi(rsi_df):
+    rsi = []
+    for rsi_daily in rsi_df:
+        rsi.append(rsi_daily)
 
-def function_n():
-    ...
+    return rsi
 
 
 if __name__ == "__main__":
