@@ -57,6 +57,34 @@ def main():
 
 def trade_engine(stock_close, bollinger_bands, rsi, ema_200, ema_50):
     signal = []
+    idx = 0
+    for date, price in stock_close:
+        current_price = price["Close"]
+        
+        limits = bollinger_bands[idx]
+        upper = limits["upper"]
+        lower = limits["lower"]
+
+        current_rsi = rsi[idx]
+
+        ema_200_list = ema_200["EMA"].tolist()
+        ema_50_list = ema_50["EMA"].tolist()
+        curr_ema_200 = ema_200_list[idx]
+        curr_ema_50 = ema_50_list[idx]
+
+        if current_price < lower and current_rsi < 30 and curr_ema_50 > curr_ema_200:
+            signal.append({date: "Long", "Position": "In"})    
+        
+        if current_price > upper and current_rsi > 70 and curr_ema_50 < curr_ema_200:
+            signal.append({date: "Short", "Position": "Out"})
+
+        if 
+
+        idx += 1
+
+
+
+
     return signal
 
 
