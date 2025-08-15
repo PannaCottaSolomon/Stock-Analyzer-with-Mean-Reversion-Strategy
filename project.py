@@ -1,6 +1,6 @@
 import requests
 import json
-
+import pandas as pd
 
 APIKEY = "8RUS0YURXTPQQYEM"
 
@@ -13,9 +13,12 @@ def main():
     amount = int(input("Initial Amount: "))
     time_length = int(input("Length of time (days): "))
 
+    # API call to retrieve stock data
     stock_info = api_call(ticker)
-    print(json.dumps(stock_info, indent=2))
 
+    # Convert json of data to a pandas dataframe
+    df = convert_json_to_dataframe(stock_info, time_length)
+    print(df)
 
 def api_call(ticker):
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&outputsize=full&apikey={APIKEY}"
@@ -23,8 +26,22 @@ def api_call(ticker):
     return r.json()
 
 
-def function_2():
+def convert_json_to_dataframe(json, days):
+    df = pd.DataFrame.from_dict(json["Time Series (Daily)"], orient="index")
+    df = df.sort_index() # sorted in ascending (oldest date first)
+    df = df[["4. close"]].astype(float).rename(columns={"4. close" : "Close"})
+    df = df.tail(days) # 252 is 1 trading year
+    return df
+
+
+def function_n():
     ...
+
+
+
+def function_n():
+    ...
+
 
 
 def function_n():
