@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-import json
+import backtesting_simulator
 
 APIKEY = "8RUS0YURXTPQQYEM" # Alpha Vantage API Key (Solomon)
 K = 2                       # K: number of standard deviations away from MA
@@ -11,7 +11,7 @@ def main():
     # Get Ticker, Initial Capital & Time
     ticker = input("Ticker: ")
     time_length = int(input("Length of time (days): "))
-    # amount = int(input("Initial Amount: "))
+    amount = int(input("Initial Amount: "))
 
     # Get closing price
     stock_info = api_call_stock(ticker)
@@ -51,11 +51,12 @@ def main():
     list_rsi = calc_rsi(df_rsi_14)
         
     # Generate buy/sell signal
-    trade_signals = trade_engine(df_stock_current, list_bollinger_bands, list_rsi, df_ema_200, df_ema_50)
+    trade_signals = trade_engine(df_stock_current, df_ema_20, list_bollinger_bands, list_rsi, df_ema_200, df_ema_50)
 
+    # Simulate trades using backtester
+    simulation = backtesting_simulator.simulate(df_stock_current, trade_signals, amount)
 
-
-def trade_engine(stock_close, bollinger_bands, rsi, ema_200, ema_50):
+def trade_engine(stock_close, ema_20, bollinger_bands, rsi, ema_200, ema_50):
     signal = []
     idx = 0
     for date, price in stock_close:
@@ -69,21 +70,26 @@ def trade_engine(stock_close, bollinger_bands, rsi, ema_200, ema_50):
 
         ema_200_list = ema_200["EMA"].tolist()
         ema_50_list = ema_50["EMA"].tolist()
+        ema_20_list = ema_20["EMA"].tolist()
         curr_ema_200 = ema_200_list[idx]
         curr_ema_50 = ema_50_list[idx]
+        curr_ema_20 = ema_20_list[idx]
 
+        # Entry rules
         if current_price < lower and current_rsi < 30 and curr_ema_50 > curr_ema_200:
-            signal.append({date: "Long", "Position": "In"})    
+            signal.append({date: "Enter Long", "Position": "In"})    
         
         if current_price > upper and current_rsi > 70 and curr_ema_50 < curr_ema_200:
-            signal.append({date: "Short", "Position": "Out"})
+            signal.append({date: "Enter Short", "Position": "In"})
 
-        if 
+        # Exit
+        if current_price >= curr_ema_20:
+            signal.append({date: "Exit Long", "Position": "Out"})
+
+        if current_price <= curr_ema_20:
+            signal.append({date: "Exit Short", "Position": "Out"})
 
         idx += 1
-
-
-
 
     return signal
 
