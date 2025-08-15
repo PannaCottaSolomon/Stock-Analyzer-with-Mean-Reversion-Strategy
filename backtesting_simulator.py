@@ -1,17 +1,20 @@
 import sys
 import pandas as pd
-import numpy
+import numpy as np
+import csv
 
-
-def simulate(df_price, signals, amount):
+def simulate(df_price, signals, amount, risk_free_rate):
     simulation_data = []
     evaluation_data = []
+    simulation = []
 
     with open("simulation.csv") as file:
         balance = float(amount)
         num_shares = 0
         idx = 0
         in_position = False
+        trades = []
+        trades_idx = 0
 
         for row in df_price.itertuples():
             # Get date and price for current day
@@ -32,6 +35,7 @@ def simulate(df_price, signals, amount):
                 num_shares = int(balance / closing_price)
                 today["Shares"] = num_shares
                 spent = closing_price * num_shares
+                trades.append(-1 * spent)
                 today["Position"] = "Long"
                 today["Holdings Value"] = spent
                 cash = balance - spent
@@ -48,6 +52,7 @@ def simulate(df_price, signals, amount):
                 num_shares = int(balance / closing_price)
                 today["Shares"] = num_shares
                 earned = closing_price * num_shares
+                trades.append(earned)
                 today["Position"] = "Short"
                 today["Holdings Value"] = earned
                 cash = balance + earned
@@ -63,6 +68,8 @@ def simulate(df_price, signals, amount):
                 start_bal = balance
                 today["Shares"] = 0
                 earned = closing_price * num_shares
+                trades[trades_idx] += earned
+                trades_idx += 1
                 today["Position"] = "NA"
                 today["Holdings Value"] = 0
                 cash = balance + earned
@@ -78,6 +85,8 @@ def simulate(df_price, signals, amount):
                 start_bal = balance
                 today["Shares"] = 0
                 spent = closing_price * num_shares
+                trades[trades_idx] -= spent
+                trades_idx += 1
                 today["Position"] = "NA"
                 today["Holdings Value"] = 0
                 cash = balance - spent
@@ -95,9 +104,27 @@ def simulate(df_price, signals, amount):
             simulation_data.append(today)
             idx += 1
         
-        # Calculate evaluation metrics
+        # Calculate evaluation metrics (Total P/L, Win Rate, Sharpe)
         total_profit_loss = balance - amount
-        
 
-    simulation = evaluation_data + simulation_data
+        wins = sum(1 for trade in trades if trade > 0)
+        win_rate = wins / len(trades) * 100
+
+        risk_free_per_trade = (float(risk_free_rate) / 100) / len(trades)  # Same unit for mean, s.d., risk free rate
+        sharpe = (np.mean(trades) - risk_free_per_trade) / np.std(trades)
+
+        evaluation_data.append({"Total P/L": total_profit_loss, "Win Rate": win_rate, "Sharpe Ratio": sharpe})
+        simulation = evaluation_data + simulation_data
+
+        # Write results to csv
+        writer = csv.writer(file)
+        metrics = simulation[0]
+        writer.writerow(metrics.keys())
+        writer.writerow(metrics.values())
+        daily_data = simulation[1:]
+        headers = daily_data[0].keys()
+        writer = csv.DictWriter(file, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(daily_data)
+
     return simulation
