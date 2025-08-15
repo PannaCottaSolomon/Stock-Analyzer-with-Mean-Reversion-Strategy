@@ -77,18 +77,27 @@ def trade_engine(stock_close, ema_20, bollinger_bands, rsi, ema_200, ema_50):
 
         # Entry rules
         if current_price < lower and current_rsi < 30 and curr_ema_50 > curr_ema_200:
-            signal.append({date: "Enter Long", "Position": "In"})    
+            signal.append({date: "Enter Long"})
+            idx += 1
+            continue    
         
         if current_price > upper and current_rsi > 70 and curr_ema_50 < curr_ema_200:
-            signal.append({date: "Enter Short", "Position": "In"})
+            signal.append({date: "Enter Short"})
+            idx += 1
+            continue
 
         # Exit
         if current_price >= curr_ema_20:
-            signal.append({date: "Exit Long", "Position": "Out"})
+            signal.append({date: "Exit Long"})
+            idx += 1
+            continue
 
         if current_price <= curr_ema_20:
-            signal.append({date: "Exit Short", "Position": "Out"})
+            signal.append({date: "Exit Short"})
+            idx += 1
+            continue
 
+        signal.append({date: "Hold"})
         idx += 1
 
     return signal
