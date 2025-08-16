@@ -203,7 +203,7 @@ def calc_bollinger_bands(std_dev_list, ema_20_df):
 
 def calc_rsi(rsi_df):
     rsi = []
-    for rsi_daily in rsi_df:
+    for rsi_daily in rsi_df["RSI"]:
         rsi.append(rsi_daily)
 
     return rsi
