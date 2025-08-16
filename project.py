@@ -8,6 +8,10 @@ APIKEY = "8RUS0YURXTPQQYEM"     # Alpha Vantage API Key (Solomon)
 K = 2                           # K: number of standard deviations away from MA
 
 def main():
+    #################################################################################  
+    ###################### Retrieve financial data from API #########################
+    #################################################################################  
+
     # Get Ticker, Initial Capital & Time
     ticker = input("Ticker: ")
     time_length = int(input("Length of time (days): "))
@@ -24,11 +28,15 @@ def main():
     moving_avg_200 = api_call_technical("EMA", ticker, "200")
     moving_avg_50 = api_call_technical("EMA", ticker, "50")
     
-    print(json.dumps(stock_info, indent=2))
-    print(json.dumps(rsi, indent=2))
-    print(json.dumps(moving_avg_20, indent=2))
-    print(json.dumps(moving_avg_200, indent=2))
-    print(json.dumps(moving_avg_50, indent=2))
+    # print(json.dumps(stock_info, indent=2))
+    # print(json.dumps(rsi, indent=2))
+    # print(json.dumps(moving_avg_20, indent=2))
+    # print(json.dumps(moving_avg_200, indent=2))
+    # print(json.dumps(moving_avg_50, indent=2))
+
+    #################################################################################   
+    ###################### Convert JSON to DataFrames ###############################
+    #################################################################################  
 
     # Financial data cleaning & preprocessing
     df_stock_current = get_stock_past_n_days(stock_info, time_length)
@@ -45,6 +53,10 @@ def main():
     # print(df_rsi_14)
     # print(df_ema_200)
     # print(df_ema_50)
+
+    #################################################################################   
+    ###################### Convert JSON to DataFrames ###############################
+    #################################################################################
     
     # Calculate Bollinger Bands
     list_bollinger_bands = calc_bollinger_bands(list_stock_std_dev, df_ema_20)
@@ -57,6 +69,11 @@ def main():
     # Simulate trades using backtester
     simulation = backtesting_simulator.simulate(df_stock_current, trade_signals, amount, risk_free_rate)
     
+
+    #################################################################################   
+    ###################### Display Metrics & Data ###################################
+    #################################################################################
+
     # Display simulation metrics & data
     sim_metrics = simulation[0]
     sim_data = simulation[1]
@@ -176,7 +193,7 @@ def calc_std_dev(json, days):
 
 def calc_bollinger_bands(std_dev_list, ema_20_df):
     bollinger_bands = []
-    for i, ema_curr in enumerate(ema_20_df):
+    for i, ema_curr in enumerate(ema_20_df["EMA"]):
         std_dev_curr = std_dev_list[i]
         upper_limit = ema_curr + std_dev_curr
         lower_limit = ema_curr - std_dev_curr
