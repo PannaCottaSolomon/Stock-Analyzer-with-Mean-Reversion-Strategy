@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from project import calc_bollinger_bands, calc_rsi, trade_engine
+from backtesting_simulator import simulate, display
 
 dates = [
         "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08",
@@ -11,6 +12,10 @@ def main():
     test_calc_bollinger_bands()
     test_calc_rsi()
     test_trade_engine()
+
+    # Only for testing simulate and display functions: 
+    #       - Enable test_trade_engine() to return signals first
+    # test_simulate_and_display()
 
 def test_calc_bollinger_bands():
     # Data provided
@@ -127,12 +132,35 @@ def test_trade_engine():
         test_signal.append({date: "Hold"})
         idx += 1
 
-
     # Test trade engine function
     actl_signals = trade_engine(df_stock_close, df_ema_20, list_bb, sample_rsi, df_ema_200, df_ema_50)
+    
+    # Only for debugging and testing simulate and display functions
     # print(actl_signals)
+    # return actl_signals
+    
     assert actl_signals == test_signal
 
+
+def test_simulate_and_display():
+    # Mock 10 closing price
+    np.random.seed(42)  # for reproducibility
+    base_price = 155
+    price_changes = np.random.normal(loc=0, scale=1, size=10)  # small daily changes
+    closing_prices = (base_price + np.cumsum(price_changes)).round(2)
+    closing_prices_list = closing_prices.tolist()
+    df_stock_close = pd.DataFrame(closing_prices_list, index=pd.to_datetime(dates), columns=["Close"])
+
+    # Mock 10 trade signals
+    test_signals = test_trade_engine()
+
+    # Mock 10000 initial capital and 0% risk-free rate
+    amount = 10000
+    risk_free_rate = 0
+
+    # Test simulate and display functions
+    test_simulation = simulate(df_stock_close, test_signals, amount, risk_free_rate)
+    display(test_simulation, "AAPL")
 
 if __name__ == "__main__":
     main()

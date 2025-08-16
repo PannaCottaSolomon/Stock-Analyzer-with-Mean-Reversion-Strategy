@@ -9,7 +9,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
     evaluation_data = []
     simulation = []
 
-    with open("simulation.csv", "w") as file:
+    with open("simulation_results.csv", "w") as file:
         balance = float(amount)
         num_shares = 0
         idx = 0
@@ -173,10 +173,10 @@ def simulate(df_price, signals, amount, risk_free_rate):
     return simulation
 
 
-def display(simulation):
+def display(simulation, ticker):
     # Display simulation metrics & data
     sim_metrics = simulation[0]
-    sim_data = simulation[1]
+    sim_data = simulation[1:]
     dates = [row["Date"] for row in sim_data]
     ending_bal = [row["Ending Balance"] for row in sim_data]
     price = [row["Price (Close)"] for row in sim_data]
@@ -194,9 +194,10 @@ def display(simulation):
     graph2.tick_params(axis="y", labelcolor="r")
 
     plt.xticks(rotation=45)
-    plt.title("Balance & Price over Time")
+    plt.title(f"Balance & Price over Time: {ticker}")
     plt.grid(True)
     fig.tight_layout()
+    plt.savefig(f"simulation_performance_{ticker}.png", dpi=300)
     plt.show() 
 
     return "Success"

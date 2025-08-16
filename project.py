@@ -75,7 +75,7 @@ def main():
     # ###################### Display Metrics & Data ###################################
     # #################################################################################
 
-    status = backtesting_simulator.display(simulation)
+    status = backtesting_simulator.display(simulation, ticker)
     if status != "Success":
         print("Failed")
     print(status)
