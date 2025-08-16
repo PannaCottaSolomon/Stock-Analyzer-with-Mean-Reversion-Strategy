@@ -47,11 +47,11 @@ def main():
     df_ema_200 = convert_technical_json_to_dataframe("EMA", moving_avg_200, time_length)
     df_ema_50 = convert_technical_json_to_dataframe("EMA", moving_avg_50, time_length)
     
-    print(list_stock_std_dev)
-    print(df_stock_current)
-    print(df_ema_20)
-    print(df_ema_200)
-    print(df_ema_50)
+    # print(list_stock_std_dev)
+    # print(df_stock_current)
+    # print(df_ema_20)
+    # print(df_ema_200)
+    # print(df_ema_50)
 
     #################################################################################   
     ###################### Convert JSON to DataFrames ###############################
@@ -62,8 +62,8 @@ def main():
     # Calculate RSI
     list_rsi = calc_rsi(df_rsi_14)
 
-    print(list_bollinger_bands)
-    print(list_rsi)
+    # print(list_bollinger_bands)
+    # print(list_rsi)
         
     # Generate buy/sell signal
     trade_signals = trade_engine(df_stock_current, df_ema_20, list_bollinger_bands, list_rsi, df_ema_200, df_ema_50)
@@ -145,6 +145,7 @@ def api_call_technical(indicator, ticker, period):
 def convert_technical_json_to_dataframe(indicator, json, days):
     df = pd.DataFrame.from_dict(json[f"Technical Analysis: {indicator}"], orient="index")
     df = df.sort_index() # sorted in ascending (oldest date first)
+    df = df.astype(float)  # Convert all values to float
     df = df.tail(days) # 252 is 1 trading year
     return df
 
@@ -175,22 +176,24 @@ def calc_std_dev(json, days):
     
     return std_dev
 
-def calc_bollinger_bands(std_dev_list, ema_20_df):
-    bollinger_bands = []
-    for i, ema_curr in enumerate(ema_20_df["EMA"]):
-        std_dev_curr = std_dev_list[i]
-        upper_limit = ema_curr + std_dev_curr
-        lower_limit = ema_curr - std_dev_curr
-        bollinger_bands.append({"upper": upper_limit, "lower": lower_limit})
-
-    return bollinger_bands
-
 def calc_rsi(rsi_df):
     rsi = []
     for rsi_daily in rsi_df["RSI"]:
         rsi.append(rsi_daily)
 
     return rsi
+
+def calc_bollinger_bands(std_dev_list, ema_20_df):
+    bollinger_bands = []
+    for i, ema_curr in enumerate(ema_20_df["EMA"]):
+        # print(ema_curr, type(ema_curr))
+        # print(std_dev_list[i], type(std_dev_list[i]))
+        std_dev_curr = std_dev_list[i]
+        upper_limit = ema_curr + std_dev_curr
+        lower_limit = ema_curr - std_dev_curr
+        bollinger_bands.append({"upper": upper_limit, "lower": lower_limit})
+
+    return bollinger_bands
 
 
 if __name__ == "__main__":

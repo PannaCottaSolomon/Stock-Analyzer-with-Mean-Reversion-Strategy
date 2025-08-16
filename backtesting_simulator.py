@@ -9,11 +9,11 @@ def simulate(df_price, signals, amount, risk_free_rate):
     evaluation_data = []
     simulation = []
 
-    with open("simulation.csv") as file:
+    with open("simulation.csv", "w") as file:
         balance = float(amount)
         num_shares = 0
         idx = 0
-        in_position = False
+        position_type = "None"  # "None", "Long", or "Short"
         trades = []
         trades_idx = 0
 
@@ -30,89 +30,131 @@ def simulate(df_price, signals, amount, risk_free_rate):
             action = signal_current[date]
 
             # Execute trades (buy/sell/hold)
-            if action == "Enter Long" and not in_position:
-                # Buy n shares
+            if action == "Enter Long" and position_type == "None":
+                # Buy shares with all available cash
                 start_bal = balance
                 num_shares = int(balance / closing_price)
                 today["Shares"] = num_shares
                 spent = closing_price * num_shares
-                trades.append(-1 * spent)
+                trades.append(-1 * spent)  # Negative for buy
                 today["Position"] = "Long"
-                today["Holdings Value"] = spent
+                today["Holdings Value"] = num_shares * closing_price
                 cash = balance - spent
                 today["Cash"] = cash
 
-                # Update new daily balance & holdings after buying long
-                balance = balance - spent + cash
+                # Update balance (cash remaining after purchase)
+                balance = cash
                 today["Ending Balance"] = balance
-                today["P/L (Daily)"] = balance - start_bal
-                in_position = True
-            elif action == "Enter Short" and not in_position:
-                # Sell n shares
+                today["P/L (Daily)"] = 0  # No P/L on entry
+                position_type = "Long"
+                
+            elif action == "Enter Short" and position_type == "None":
+                # Short sell shares (borrow and sell)
                 start_bal = balance
                 num_shares = int(balance / closing_price)
-                today["Shares"] = num_shares
+                today["Shares"] = -num_shares  # Negative for short
                 earned = closing_price * num_shares
-                trades.append(earned)
+                trades.append(earned)  # Positive for short sell
                 today["Position"] = "Short"
-                today["Holdings Value"] = earned
+                today["Holdings Value"] = -num_shares * closing_price
                 cash = balance + earned
                 today["Cash"] = cash
 
-                # Update new daily balance & holdings after short selling
-                balance = balance + earned + cash
+                # Update balance (cash from short sale)
+                balance = cash
                 today["Ending Balance"] = balance
-                today["P/L (Daily)"] = balance - start_bal
-                in_position = True
-            elif action == "Exit Long" and in_position:
-                # Sell n shares
+                today["P/L (Daily)"] = 0  # No P/L on entry
+                position_type = "Short"
+                
+            elif action == "Exit Long" and position_type == "Long":
+                # Sell long position
                 start_bal = balance
                 today["Shares"] = 0
                 earned = closing_price * num_shares
-                trades[trades_idx] += earned
+                trades[trades_idx] += earned  # Add sale proceeds to buy cost
                 trades_idx += 1
-                today["Position"] = "NA"
+                today["Position"] = "None"
                 today["Holdings Value"] = 0
                 cash = balance + earned
                 today["Cash"] = cash
 
-                # Update new daily balance & holdings after closing long position
-                balance = balance + cash
+                # Update balance (cash from sale)
+                balance = cash
                 today["Ending Balance"] = balance
-                today["P/L (Daily)"] = balance - start_bal
-                in_position = False
-            elif action == "Exit Short" and in_position:
-                # Buy n shares
+                today["P/L (Daily)"] = earned - (num_shares * closing_price)  # P/L from position
+                position_type = "None"
+                
+            elif action == "Exit Short" and position_type == "Short":
+                # Buy back short position
                 start_bal = balance
                 today["Shares"] = 0
                 spent = closing_price * num_shares
-                trades[trades_idx] -= spent
+                trades[trades_idx] -= spent  # Subtract buy cost from short sale proceeds
                 trades_idx += 1
-                today["Position"] = "NA"
+                today["Position"] = "None"
                 today["Holdings Value"] = 0
                 cash = balance - spent
                 today["Cash"] = cash
 
-                # Update new daily balance & holdings after closing long position
-                balance = balance + cash
+                # Update balance (cash after buying back)
+                balance = cash
                 today["Ending Balance"] = balance
-                today["P/L (Daily)"] = balance - start_bal
-                in_position = False
+                today["P/L (Daily)"] = (num_shares * closing_price) - spent  # P/L from position
+                position_type = "None"
+                
+            elif action == "Hold":
+                # No action, just track current position value
+                start_bal = balance
+                if position_type == "Long":
+                    today["Shares"] = num_shares
+                    today["Position"] = "Long"
+                    today["Holdings Value"] = num_shares * closing_price
+                    today["Cash"] = balance
+                    today["Ending Balance"] = balance + (num_shares * closing_price)
+                    today["P/L (Daily)"] = num_shares * (closing_price - closing_price)  # No change if same price
+                elif position_type == "Short":
+                    today["Shares"] = -num_shares
+                    today["Position"] = "Short"
+                    today["Holdings Value"] = -num_shares * closing_price
+                    today["Cash"] = balance
+                    today["Ending Balance"] = balance + (-num_shares * closing_price)
+                    today["P/L (Daily)"] = -num_shares * (closing_price - closing_price)  # No change if same price
+                else:
+                    today["Shares"] = 0
+                    today["Position"] = "None"
+                    today["Holdings Value"] = 0
+                    today["Cash"] = balance
+                    today["Ending Balance"] = balance
+                    today["P/L (Daily)"] = 0
             else:
-                sys.exit("Simulation Failed")
+                # Invalid action/position combination
+                print(f"Invalid action: {action} with position: {position_type}")
+                today["Shares"] = num_shares if position_type == "Long" else (-num_shares if position_type == "Short" else 0)
+                today["Position"] = position_type
+                today["Holdings Value"] = 0
+                today["Cash"] = balance
+                today["Ending Balance"] = balance
+                today["P/L (Daily)"] = 0
             
             # Add daily simulation result to overall simulation 
             simulation_data.append(today)
             idx += 1
         
         # Calculate evaluation metrics (Total P/L, Win Rate, Sharpe)
-        total_profit_loss = balance - amount
+        final_balance = simulation_data[-1]["Ending Balance"]
+        total_profit_loss = final_balance - amount
 
-        wins = sum(1 for trade in trades if trade > 0)
-        win_rate = wins / len(trades) * 100
+        # Calculate win rate from completed trades
+        completed_trades = trades[:trades_idx] if trades_idx > 0 else []
+        wins = sum(1 for trade in completed_trades if trade > 0)
+        win_rate = (wins / len(completed_trades) * 100) if completed_trades else 0
 
-        risk_free_per_trade = (float(risk_free_rate) / 100) / len(trades)  # Same unit for mean, s.d., risk free rate
-        sharpe = (np.mean(trades) - risk_free_per_trade) / np.std(trades)
+        # Calculate Sharpe ratio
+        if completed_trades and len(completed_trades) > 1:
+            risk_free_per_trade = (float(risk_free_rate) / 100) / len(completed_trades)
+            sharpe = (np.mean(completed_trades) - risk_free_per_trade) / np.std(completed_trades)
+        else:
+            sharpe = 0
 
         evaluation_data.append({"Total P/L": total_profit_loss, "Win Rate": win_rate, "Sharpe Ratio": sharpe})
         simulation = evaluation_data + simulation_data

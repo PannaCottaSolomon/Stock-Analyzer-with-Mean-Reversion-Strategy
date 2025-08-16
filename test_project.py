@@ -32,12 +32,13 @@ def test_calc_bollinger_bands():
         upper_limit = ema_curr + std_dev_curr
         lower_limit = ema_curr - std_dev_curr
         test_bb.append({"upper": upper_limit, "lower": lower_limit})
-    # print(test_bb)
+    
 
     # Test calculate bollinger band function
     actl_bb = calc_bollinger_bands(std_list, df)
-    # print(actl_bb)
     assert actl_bb == test_bb
+    # print(test_bb)
+    # print(actl_bb)
 
 
 def test_calc_rsi():
