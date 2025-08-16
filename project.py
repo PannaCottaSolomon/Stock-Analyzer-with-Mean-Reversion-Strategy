@@ -54,18 +54,17 @@ def main():
     # print(df_ema_50)
 
     #################################################################################   
-    ###################### Convert JSON to DataFrames ###############################
+    ########### Calculate technicals, generate signals and backtest #################
     #################################################################################
     
     # Calculate Bollinger Bands
     list_bollinger_bands = calc_bollinger_bands(list_stock_std_dev, df_ema_20)
     # Calculate RSI
     list_rsi = calc_rsi(df_rsi_14)
-
     # print(list_bollinger_bands)
     # print(list_rsi)
         
-    # Generate buy/sell signal
+    # Generate buy/sell/hold signal
     trade_signals = trade_engine(df_stock_current, df_ema_20, list_bollinger_bands, list_rsi, df_ema_200, df_ema_50)
 
     # Simulate trades using backtester

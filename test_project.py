@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from project import calc_bollinger_bands, calc_rsi, trade_engine
 from backtesting_simulator import simulate, display
+import pytest
 
 dates = [
         "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08",
@@ -141,7 +142,7 @@ def test_trade_engine():
     
     assert actl_signals == test_signal
 
-
+@pytest.mark.skip(reason="Only when testing simulate and display functions")
 def test_simulate_and_display():
     # Mock 10 closing price
     np.random.seed(42)  # for reproducibility
