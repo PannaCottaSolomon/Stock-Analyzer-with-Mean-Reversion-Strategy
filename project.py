@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 import backtesting_simulator
 import json
-import matplotlib.pyplot as plt
+
 
 APIKEY = "8RUS0YURXTPQQYEM"     # Alpha Vantage API Key (Solomon)
 K = 2                           # K: number of standard deviations away from MA
@@ -47,12 +47,11 @@ def main():
     df_ema_200 = convert_technical_json_to_dataframe("EMA", moving_avg_200, time_length)
     df_ema_50 = convert_technical_json_to_dataframe("EMA", moving_avg_50, time_length)
     
-    # print(list_stock_std_dev)
-    # print(df_stock_current)
-    # print(df_ema_20)
-    # print(df_rsi_14)
-    # print(df_ema_200)
-    # print(df_ema_50)
+    print(list_stock_std_dev)
+    print(df_stock_current)
+    print(df_ema_20)
+    print(df_ema_200)
+    print(df_ema_50)
 
     #################################################################################   
     ###################### Convert JSON to DataFrames ###############################
@@ -62,6 +61,9 @@ def main():
     list_bollinger_bands = calc_bollinger_bands(list_stock_std_dev, df_ema_20)
     # Calculate RSI
     list_rsi = calc_rsi(df_rsi_14)
+
+    print(list_bollinger_bands)
+    print(list_rsi)
         
     # Generate buy/sell signal
     trade_signals = trade_engine(df_stock_current, df_ema_20, list_bollinger_bands, list_rsi, df_ema_200, df_ema_50)
@@ -69,41 +71,20 @@ def main():
     # Simulate trades using backtester
     simulation = backtesting_simulator.simulate(df_stock_current, trade_signals, amount, risk_free_rate)
     
+    # #################################################################################   
+    # ###################### Display Metrics & Data ###################################
+    # #################################################################################
 
-    #################################################################################   
-    ###################### Display Metrics & Data ###################################
-    #################################################################################
-
-    # Display simulation metrics & data
-    sim_metrics = simulation[0]
-    sim_data = simulation[1]
-    dates = [row["Date"] for row in sim_data]
-    ending_bal = [row["Ending Balance"] for row in sim_data]
-    price = [row["Price (Close)"] for row in sim_data]
-    
-    print(sim_metrics)
-    fig, graph1 = plt.subplots()
-
-    graph1.plot(dates, ending_bal, "b-o", label="Balance")
-    graph1.set_xlabel("Date")
-    graph1.set_ylabel("Balance", color="b")
-    graph1.tick_params(axis="y", labelcolor="b")
-    graph2 = graph1.twinx()
-    graph2.plot(dates, price, "r-s", label="Price (Close)")
-    graph2.set_ylabel("Price (Close)", color="r")
-    graph2.tick_params(axis="y", labelcolor="r")
-
-    plt.xticks(rotation=45)
-    plt.title("Balance & Price over Time")
-    plt.grid(True)
-    fig.tight_layout()
-    plt.show() 
+    status = backtesting_simulator.display(simulation)
+    if status != "Success":
+        print("Failed")
+    print(status)
 
 
 def trade_engine(stock_close, ema_20, bollinger_bands, rsi, ema_200, ema_50):
     signal = []
     idx = 0
-    for date, price in stock_close:
+    for date, price in stock_close.iterrows():
         current_price = price["Close"]
         
         limits = bollinger_bands[idx]
@@ -181,12 +162,15 @@ def calc_std_dev(json, days):
     df = df.sort_index() # sorted in ascending (oldest date first)
     df = df[["4. close"]].astype(float).rename(columns={"4. close" : "Close"})
 
+    # Handle NaN: forward fill, then backward fill if first value is NaN
+    df["Close"] = df["Close"].ffill().bfill()
+
     base_df = df.copy()
 
     for day in range(days):
         temp_df = base_df.tail(days + 20 - day)
         df_oldest_n_days = temp_df.tail(-1 * days)
-        std_dev_curr = df_oldest_n_days.std()
+        std_dev_curr = df_oldest_n_days["Close"].std(ddof=1)
         std_dev.append(std_dev_curr)
     
     return std_dev

@@ -1,7 +1,8 @@
 import sys
+import csv
 import pandas as pd
 import numpy as np
-import csv
+import matplotlib.pyplot as plt
 
 def simulate(df_price, signals, amount, risk_free_rate):
     simulation_data = []
@@ -128,3 +129,32 @@ def simulate(df_price, signals, amount, risk_free_rate):
         writer.writerows(daily_data)
 
     return simulation
+
+
+def display(simulation):
+    # Display simulation metrics & data
+    sim_metrics = simulation[0]
+    sim_data = simulation[1]
+    dates = [row["Date"] for row in sim_data]
+    ending_bal = [row["Ending Balance"] for row in sim_data]
+    price = [row["Price (Close)"] for row in sim_data]
+    
+    print(sim_metrics)
+    fig, graph1 = plt.subplots()
+
+    graph1.plot(dates, ending_bal, "b-o", label="Balance")
+    graph1.set_xlabel("Date")
+    graph1.set_ylabel("Balance", color="b")
+    graph1.tick_params(axis="y", labelcolor="b")
+    graph2 = graph1.twinx()
+    graph2.plot(dates, price, "r-s", label="Price (Close)")
+    graph2.set_ylabel("Price (Close)", color="r")
+    graph2.tick_params(axis="y", labelcolor="r")
+
+    plt.xticks(rotation=45)
+    plt.title("Balance & Price over Time")
+    plt.grid(True)
+    fig.tight_layout()
+    plt.show() 
+
+    return "Success"
