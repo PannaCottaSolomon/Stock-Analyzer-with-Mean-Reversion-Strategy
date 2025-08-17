@@ -1,4 +1,6 @@
-# Ignore all .png files
+# Ignore all attachments
 *.png
 *.jpeg
 *.jpg
+*.pdf
+*.csv
