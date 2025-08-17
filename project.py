@@ -121,7 +121,7 @@ def trade_engine(stock_close, ema_20, bollinger_bands, rsi, ema_200, ema_50):
             idx += 1
             continue
 
-        signal.append({date: "Hold"})
+        signal.append({date: "None"})
         idx += 1
 
     return signal
