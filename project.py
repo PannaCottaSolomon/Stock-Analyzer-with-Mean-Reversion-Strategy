@@ -40,7 +40,7 @@ def main():
 
     # Financial data cleaning & preprocessing
     df_stock_current = get_stock_past_n_days(stock_info, time_length)
-    list_stock_std_dev = calc_std_dev(stock_info, 20) # std dev shld be same time period as MA
+    list_stock_std_dev = calc_std_dev(stock_info, time_length)  # rolling 20-day std dev for last N days
     df_ema_20 = convert_technical_json_to_dataframe("EMA", moving_avg_20, time_length)
     
     df_rsi_14 = convert_technical_json_to_dataframe("RSI", rsi, time_length)
@@ -155,9 +155,7 @@ def get_stock_past_n_days(json, days):
     df = df.tail(days) # 252 is 1 trading year
     return df
 
-def calc_std_dev(json, days):
-    std_dev = []
-
+def calc_std_dev(json, days, window=20):
     df = pd.DataFrame.from_dict(json["Time Series (Daily)"], orient="index")
     df = df.sort_index() # sorted in ascending (oldest date first)
     df = df[["4. close"]].astype(float).rename(columns={"4. close" : "Close"})
@@ -165,15 +163,11 @@ def calc_std_dev(json, days):
     # Handle NaN: forward fill, then backward fill if first value is NaN
     df["Close"] = df["Close"].ffill().bfill()
 
-    base_df = df.copy()
+    # Rolling standard deviation over the specified window (e.g., 20 days)
+    rolling_std = df["Close"].rolling(window=window).std(ddof=1)
 
-    for day in range(days):
-        temp_df = base_df.tail(days + 20 - day)
-        df_oldest_n_days = temp_df.tail(-1 * days)
-        std_dev_curr = df_oldest_n_days["Close"].std(ddof=1)
-        std_dev.append(std_dev_curr)
-    
-    return std_dev
+    # Return the last `days` values to align with other indicators
+    return rolling_std.tail(days).tolist()
 
 def calc_rsi(rsi_df):
     rsi = []
