@@ -17,6 +17,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
         trades = []
         trades_idx = 0
         ytd_closing_price = 0
+        cash = balance
 
         for row in df_price.itertuples():
             # Get date and price for current day
@@ -102,8 +103,8 @@ def simulate(df_price, signals, amount, risk_free_rate):
                 today["P/L (Daily)"] = num_shares * (ytd_closing_price - closing_price)  # P/L from position
                 position_type = "None"
                 ytd_closing_price = closing_price
-                
-            elif action == "None":
+            
+            else:
                 # No action, just track current position value
                 if position_type == "Long":
                     today["Shares"] = num_shares
@@ -128,15 +129,6 @@ def simulate(df_price, signals, amount, risk_free_rate):
                     today["Cash"] = cash
                     today["Ending Balance"] = balance
                     today["P/L (Daily)"] = 0
-            else:
-                # Invalid action/position combination
-                print(f"Invalid action: {action} with position: {position_type}")
-                today["Shares"] = num_shares if position_type == "Long" else (-num_shares if position_type == "Short" else 0)
-                today["Position"] = position_type
-                today["Holdings Value"] = 0
-                today["Cash"] = balance
-                today["Ending Balance"] = balance
-                today["P/L (Daily)"] = 0
             
             # Add daily simulation result to overall simulation 
             simulation_data.append(today)
