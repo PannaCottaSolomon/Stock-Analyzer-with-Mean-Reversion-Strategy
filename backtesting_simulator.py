@@ -4,12 +4,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-def simulate(df_price, signals, amount, risk_free_rate):
+def simulate(df_price, signals, amount, risk_free_rate, ticker):
     simulation_data = []
     evaluation_data = []
     simulation = []
 
-    with open("simulation_results.csv", "w") as file:
+    with open(f"simulation_results_{ticker}.csv", "w") as file:
         balance = float(amount)
         num_shares = 0
         idx = 0
@@ -25,7 +25,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
             closing_price = row.Close
 
             # Record current day data
-            today = {"Date": date, "Starting Balance": balance, "Price (Close)": closing_price}
+            today = {"Date": date, "Price (Close)": closing_price}
 
             # Extract trade signal and positions for current day
             signal_current = signals[idx]
@@ -62,7 +62,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
                 today["Cash"] = cash
 
                 # Update balance (cash from short sale)
-                balance = cash
+                balance = cash 
                 today["Ending Balance"] = balance
                 today["P/L (Daily)"] = 0  # No P/L on entry
                 position_type = "Short"
@@ -76,7 +76,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
                 trades_idx += 1
                 today["Position"] = "None"
                 today["Holdings Value"] = 0
-                cash = balance + earned
+                cash = cash + earned
                 today["Cash"] = cash
 
                 # Update balance (cash from sale)
@@ -94,7 +94,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
                 trades_idx += 1
                 today["Position"] = "None"
                 today["Holdings Value"] = 0
-                cash = balance - spent
+                cash = cash - spent
                 today["Cash"] = cash
 
                 # Update balance (cash after buying back)
@@ -114,6 +114,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
                     balance = cash + (num_shares * closing_price)
                     today["Ending Balance"] = balance
                     today["P/L (Daily)"] = num_shares * (closing_price - ytd_closing_price)  # No change if same price
+                    ytd_closing_price = closing_price
                 elif position_type == "Short":
                     today["Shares"] = -num_shares
                     today["Position"] = "Short"
@@ -122,6 +123,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
                     balance = cash + (-num_shares * closing_price)
                     today["Ending Balance"] = balance
                     today["P/L (Daily)"] = -num_shares * (closing_price - ytd_closing_price)  # No change if same price
+                    ytd_closing_price = closing_price
                 else:
                     today["Shares"] = 0
                     today["Position"] = "None"
@@ -129,6 +131,7 @@ def simulate(df_price, signals, amount, risk_free_rate):
                     today["Cash"] = cash
                     today["Ending Balance"] = balance
                     today["P/L (Daily)"] = 0
+                    ytd_closing_price = closing_price
             
             # Add daily simulation result to overall simulation 
             simulation_data.append(today)

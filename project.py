@@ -68,7 +68,7 @@ def main():
     trade_signals = trade_engine(df_stock_current, df_ema_20, list_bollinger_bands, list_rsi, df_ema_200, df_ema_50)
 
     # Simulate trades using backtester
-    simulation = backtesting_simulator.simulate(df_stock_current, trade_signals, amount, risk_free_rate)
+    simulation = backtesting_simulator.simulate(df_stock_current, trade_signals, amount, risk_free_rate, ticker)
     
     # #################################################################################   
     # ###################### Display Metrics & Data ###################################
