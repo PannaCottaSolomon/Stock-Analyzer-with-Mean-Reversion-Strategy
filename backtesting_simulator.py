@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-def simulate(df_price, signals, amount, risk_free_rate, ticker):
+def simulate(df_price, signals, amount, ticker):
     simulation_data = []
     evaluation_data = []
     simulation = []
@@ -149,8 +149,7 @@ def simulate(df_price, signals, amount, risk_free_rate, ticker):
 
         # Calculate Sharpe ratio
         if completed_trades and len(completed_trades) > 1:
-            risk_free_per_trade = (float(risk_free_rate) / 100) / len(completed_trades)
-            sharpe = (np.mean(completed_trades) - risk_free_per_trade) / np.std(completed_trades)
+            sharpe = np.mean(completed_trades) / np.std(completed_trades)
         else:
             sharpe = 0
         sharpe = round(sharpe, 2)

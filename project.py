@@ -16,7 +16,7 @@ def main():
     ticker = input("Ticker: ")
     time_length = int(input("Length of time (days): "))
     amount = int(input("Initial Amount: "))
-    risk_free_rate = int(input("Risk-Free Rate (Annual): "))
+    # risk_free_rate = int(input("Risk-Free Rate (Annual): "))
 
     # Get closing price
     stock_info = api_call_stock(ticker)
@@ -68,7 +68,7 @@ def main():
     trade_signals = trade_engine(df_stock_current, df_ema_20, list_bollinger_bands, list_rsi, df_ema_200, df_ema_50)
 
     # Simulate trades using backtester
-    simulation = backtesting_simulator.simulate(df_stock_current, trade_signals, amount, risk_free_rate, ticker)
+    simulation = backtesting_simulator.simulate(df_stock_current, trade_signals, amount, ticker)
     
     # #################################################################################   
     # ###################### Display Metrics & Data ###################################

@@ -99,7 +99,7 @@ pytest test_project.py -v
 ### Output Metrics
 - **Total P/L**: Net profit/loss from all completed trades
 - **Win Rate**: Percentage of profitable trades
-- **Sharpe Ratio**: Risk-adjusted return measure
+- **Sharpe Ratio**: Risk-adjusted return measure (computed without subtracting a risk-free rate for simplicity)
 
 ### Trading Statistics
 - Position tracking (Long/Short/None)
@@ -126,6 +126,7 @@ pytest test_project.py -v
 3. **Single Asset**: Currently supports one ticker at a time
 4. **No Transaction Costs**: Simulation doesn't include brokerage fees or slippage
 5. **Market Hours**: Assumes continuous trading without gaps
+6. **Sharpe Calculation Simplification**: Risk-free rate is excluded from the Sharpe ratio calculation for simplicity
 
 ## Future Improvements
 

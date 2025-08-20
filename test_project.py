@@ -155,12 +155,11 @@ def test_simulate_and_display():
     # Mock 10 trade signals
     test_signals = test_trade_engine()
 
-    # Mock 10000 initial capital and 0% risk-free rate
+    # Mock 10000 initial capital
     amount = 10000
-    risk_free_rate = 0
 
     # Test simulate and display functions
-    test_simulation = simulate(df_stock_close, test_signals, amount, risk_free_rate)
+    test_simulation = simulate(df_stock_close, test_signals, amount, "AAPL")
     display(test_simulation, "AAPL")
 
 if __name__ == "__main__":
