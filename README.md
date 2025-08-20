@@ -52,7 +52,6 @@ The program will prompt you for:
 Ticker: AAPL
 Length of time (days): 252
 Initial Amount: 10000
-Risk-Free Rate (Annual): 5
 ```
 
 ### Output
@@ -121,7 +120,7 @@ pytest test_project.py -v
 
 ## Limitations & Considerations
 
-1. **API Rate Limits**: Alpha Vantage free tier has call limits (5 calls per minute, 500 per day)
+1. **API Rate Limits**: Alpha Vantage free tier has call limits (25 requests per day)
 2. **Historical Data Only**: Uses past data for backtesting (not real-time trading)
 3. **Single Asset**: Currently supports one ticker at a time
 4. **No Transaction Costs**: Simulation doesn't include brokerage fees or slippage
@@ -137,6 +136,7 @@ pytest test_project.py -v
 - **Real-time Trading**: Integration with brokerage APIs
 - **Web Interface**: User-friendly web dashboard
 - **Database Storage**: Historical data caching and storage
+- **Enhanced Sharpe**: Accepts risk free rate for improved sharpe calculation
 
 
 ### Potential Enhancements
@@ -144,14 +144,6 @@ pytest test_project.py -v
 - Options trading strategies
 - Sector rotation and market regime detection
 - Advanced performance attribution analysis
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-feature`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature/new-feature`)
-5. Create a Pull Request
 
 ## License
 
